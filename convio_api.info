@@ -1,0 +1,8 @@
+;$Id$
+name = "Convio API"
+description = "Enables Convio's Constituent and Single Sign-On APIs"
+package = Convio - Nonprofit Software
+dependencies[] = token 
+dependencies[] = querypath
+core = 6.x
+php = 5.1

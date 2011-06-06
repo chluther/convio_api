@@ -1,0 +1,33 @@
+        /*
+$values['admin_status']        = $user -> convio_admin_status;
+        $values['birth_date']          = $user -> convio_birth_date;
+        $values['cat_id']              = $user -> convio_cat_id;
+        $values['dir_member']          = $user -> convio_dir_member;
+        $values['dir_member_opt_in']   = $user -> convio_dir_member_opt_in;
+        $values['districts_cong_dist'] =  $user -> convio_districts_cong_dist;
+        $values['districts_state_house_dist'] =  $user -> convio_districts_state_house_dist;
+        $values['districts_state_senate_dist'] =  $user -> convio_districts_state_senate_dist;
+        $values['email_accepts_email']    =  $user -> convio_email_accepts_email;
+        $values['email_preferred_format'] =  $user -> convio_email_preferred_format;
+
+        $values['email_status']           =  $user -> convio_email_status;
+        $values['email_opt_in_status']    =  $user -> convio_email_opt_in_status;
+        $values['employment_employer']    =  $user -> convio_employment_employer;
+        $values['employment_occupation']  =  $user -> convio_employment_occupation;
+        $values['gender']                 =  $user -> convio_gender;
+
+        $values['member_id']              =  $user -> convio_member_id;
+        $values['membership_expiration_date'] =  $user -> convio_membership_expiration_date;
+        $values['membership_last_renewal_date'] = $user -> convio_membership_last_renewal_date;
+        $values['membership_since_date']  =  $user -> convio_membership_since_date;
+        $values['membership_status']      =  $user -> convio_membership_status;
+        $values['membership_level_id']    =  $user -> convio_membership_level_id;
+
+        $values['origin_src_code']        =  $user -> convio_origin_src_code;
+        $values['origin_subsrc_code']     =  $user -> convio_origin_subsrc_code;
+        $values['preferred_address']      =  $user -> convio_preferred_address;
+
+
+        $values['sustained_gift_card_expiration_date'] =  $user -> convio_sustained_gift_card_expiration_date;
+
+        */

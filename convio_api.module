@@ -1,0 +1,848 @@
+<?php
+// $Id$
+/**
+ * @files
+*  Convio API Module
+*  Implemeent's Convio's Single Sign-On and Constituent APIs
+*  see http://open.convio.com
+*
+*  Written by Chris Luther (chris@agileID.com)
+*
+*  @ingroup convio
+*/
+
+module_load_include("inc", "convio_api", "custom");
+module_load_include("inc", "convio_api", "includes/convio_api_configure");
+module_load_include("inc", "convio_api", "includes/convio_api_apis");
+//module_load_include("inc", "convio_api", "includes/convio_api_user");
+//module_load_include("inc", "convio_api", "includes/convio_api_clear");
+//module_load_include("inc", "convio_api", "includes/convio_api_register");
+//module_load_include("inc", "convio_api", "includes/convio_api_status");
+//module_load_include("inc", "convio_api", "includes/convio_api_validate");
+
+function myp($item) {
+  if(module_exists('drupalforfirebug')) firep($item);
+ }
+
+ /**
+ * General function to include customization file.
+ * TODO - Replace with module_load_include
+
+function convio_api_include() {
+  $path = drupal_get_path('module', 'convio_api');
+  require_once("$path/custom.inc");
+}
+*/
+ /*
+  * psudoGLOBALS - the drupal way
+  */
+function convio_api_apis() {
+   $api_options = array(
+                t('Constituent API') => array(
+                      'create' => 'create',
+                      'createOrUpdate' => 'createOrUpdate',
+                      'getGroupMembers' => 'getGroupMembers',
+                      'getUser' => 'getUser',
+                      'getUserGroups' => 'getUserGroups',
+                      'getUserInterests' => 'getUserInterests',
+                      'isEmailValid' => 'isEmailValid',
+                      'isUserInterested' => 'isUserInterested',
+                      'listInterests' => 'listInterests',
+                      'listUserFieldChoices' => 'listUserFieldChoices',
+                      'listUserFields' => 'listUserFields',
+                      'logInteraction' => 'logInteraction',
+                      'update' => 'update',
+               ),
+                t('Single Sign-on') => array(
+                      'authenticateUser' => 'authenticateUser',
+                      'changePassword' => 'changePassword',
+                      'getSingleSignOnToken' => 'getSingleSignOnToken',
+                      'login' => 'login',
+               ),
+                t('Advocacy') => array(
+                      'getAdvocacyAlerts' => 'getAdvocacyAlerts',
+                      'getAdvocacyInteractions' => 'getAdvocacyInteractions',
+                ),
+             );
+   return $api_options;
+}
+
+
+/**
+ * Implementation of hook_init()
+ * General function to include the integration specific files.
+ * This hook is run at the beginning of the page request and is used to set up
+ * global parameters which are needed later in the request.
+ * when this hook is called, all modules are already loaded in memory.
+ */
+/*
+function convio_api_init() {
+
+  global $_convio_api_ckeditor;
+
+  $path = drupal_get_path('module', 'convio_api');
+  require_once("$path/custom.inc");
+  if (module_exists('CKEditor')) {
+    $_convio_api_ckeditor = TRUE ;
+  }
+  else {
+    $_convio_api_ckeditor = FALSE;
+    variable_set('convio_api_enableCKeditor', 'FALSE');
+  };
+
+}
+*/
+
+/**
+ * Implementation of hook_help().
+ *
+ * @param $path A Drupal menu router path the help is being requested.
+ * @param $arg An array that corresponds to the return of the arg() function.
+ * @return A localized string containing the help text.
+ */
+function convio_api_help($path, $arg) {
+
+  if ($path == 'admin/help#convio') {
+    $txt = 'The Convio API module uses the !convio_open_url APIs (Single-Signon and Constituent API) to enable content personalization through the Drupal CMS.';
+    $link = l('Convio Open', 'http://open.convio.com/api/');
+    $replace = array(
+      '!convio_open_url' => $link
+    );
+    return '<p>'. t($txt, $replace) .'</p>';
+  }
+}
+
+
+/**
+ * Implementation of hook_user().
+ * The user hook is fired when a $user object is successfully loaded from the
+ * database in response to a call to user_load(). This happens when a user logs
+ * in, when authorship information is being retrieved for a node, and at several
+ * other points.
+ * @param $op What kind of actions is being performed. Possible values:
+ *    after_update,
+ *    categories,
+ *    delete,
+ *    form,
+ *    insert,
+ *    load,
+ *    login,
+ *    logout,
+ *    register,
+ *    submit,
+ *    update,
+ *    validate,
+ *    view
+ * @param &$edit The array of form values submitted by the user.
+ * @param &$account The user object on which the operation is being performed.
+ * @param $category The active category of user information being edited.
+*/
+
+
+function convio_api_user($op, &$edit, &$account, $category = NULL) {
+// TODO will need to be updated for Drupal 7
+    global $user;
+
+    switch ($op) {
+
+    case 'insert':
+    case 'update':
+      break;
+
+   // Successful user login into Drupal.
+    case 'login':
+      $email = $user->mail;
+
+      if (variable_get('convio_api_autosync', FALSE) == TRUE) {
+        if(isset($email)) {
+          convio_api_update_local_account($email);
+        } 
+        else {
+          $item = 'user undefined';
+        }
+      }
+      break;
+
+    // user logsout
+    case 'logout':
+      break;
+
+    // $user object has been created and is given to us as $account parameter.
+    case 'load':
+
+      return;
+      break;
+
+    // 'My account' page is being viewed.
+    case 'view':
+    // Add a convio fields displaying information.
+      $email = $user->mail;
+
+      // convio_api_update_local_account($email);
+     break;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @return An array of menu items.
+ */
+function convio_api_menu() {
+
+  $items = array();
+
+    // Admin interface
+  $items['admin/settings/convio'] = array(
+    'title' => 'Convio API',
+    'description' => t('Configure the connection information for the Convio Affiliate Site'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('convio_api_admin'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+    // Test
+  $items['convio/test'] = array(
+    'title' => 'Convio Test',
+    'description' => 'Testing.',
+    'page callback' => 'convio_api_test',
+    'file' => 'includes/convio_api_test.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['convio/session/return'] = array(
+    'page callback' => 'convio_api_process_return',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // SSO Authentication callback.
+  $items['convio/session/status'] = array(
+    'title' => 'Convio Session Status',
+    'description' => 'Validates the Convio user session and updates the Drupal user session.',
+    'page callback' => 'convio_api_session_status',
+    'file' => 'includes/convio_api_status.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // SSO Authentication callback.
+  $items['convio/session/validate'] = array(
+    'title' => 'Convio Session Validation',
+    'description' => 'Validates the Convio user session and updates the Drupal user session.',
+    'page callback' => 'convio_api_session_validate',
+    'file' => 'includes/convio_api_validate.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // SSO Authentication callback.
+  $items['convio/session/clear'] = array(
+    'title' => 'Convio Session Reset',
+    'description' => 'Clears the Drupal user session.',
+    'page callback' => 'convio_api_session_clear',
+    'file' => 'includes/convio_api_clear.inc',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['drupal_logout'] = array(
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_is_logged_in',
+    'page callback' => 'convio_api_drupal_logout',
+    'weight' => 10,
+  );
+
+  return $items;
+}
+
+ /**
+   * Implementation of hook_menu_alter()
+   *
+   * Alter the user/registration menu item to point to the external
+   * user account registration page
+   */
+  function convio_api_menu_alter(&$items) {
+
+    // Always allow access to the user/login.
+    $items['user/login']['access callback'] = TRUE;
+
+    /**
+     * Overrides user/register from user.module.
+     *
+     * $items['user/register'] = array(
+     *   'title' => 'Create new account',
+     *   'page callback' => 'drupal_get_form',
+     *   'page arguments' => array('user_register'),
+     *   'access callback' => 'user_register_access',
+     *   'type' => MENU_LOCAL_TASK,
+     *   'file' => 'user.pages.inc',
+     * );
+     */
+    unset($items['user/register']);
+    $items['user/register'] = array(
+                                    'title' => 'Sign up',
+                                    'page callback' => 'convio_api_user_signup',
+                                    'access callback' => 'user_register_access',
+                                    'type' => MENU_CALLBACK,
+                                    'file path' => drupal_get_path('module','convio_api'),
+                                    'file' => 'includes/convio_api_register.inc',
+                                    );
+
+     // reroute password from login page
+    unset($items['user/password']);
+
+     $items['user/password'] = array(
+                                    'title' => 'Request new password',
+                                    'page callback' => convio_api_user_password,
+                                    'access callback' => 'user_is_anonymous',
+                                    'type' => MENU_LOCAL_TASK,
+      );
+
+
+    // Disable Forgot/Reset Password pages from user.module.
+    unset($items['user/reset/%/%/%']);
+
+    // Disable Manage User Profile pages from user.module.
+    unset($items['user/autocomplete']);
+    unset($items['user/%user/delete']);
+
+    //unset($items['user/%user_category/edit']);
+    //unset($items['user/%user_category/edit/account']);
+    //unset($items['admin/user/user/create']);
+
+    // Override logout page so that the user can be logged out of Convio first
+    $items['logout']['page callback'] = 'convio_api_user_logout';
+
+    return $items;
+  }
+
+function convio_api_user_password(){
+  // module_load_include("inc", "convio_api", "custom");
+  global $CONS_SERVER;
+  global $LOGIN_SERVLET;
+  $item = $CONS_SERVER .$LOGIN_SERVLET;
+
+  drupal_goto($item);
+}
+
+function convio_api_hook_auth() {
+
+}
+
+function convio_api_userUpdate() {
+
+
+  $form['convio_api_userUpdate'] = array(
+        '#type' => 'submit',
+        '#value' => t('Update this information.'),
+        '#submit' => array('convio_api_userUpdate_submit'),
+  );
+}
+
+/**
+ * Implementation of hook_form_alter
+ * to modify the user_profile_form (and possibly other forms)
+ */
+function convio_api_form_alter(&$form, $form_state, $form_id) {
+  global $usage_terms_text;
+  global $usage_terms_checkbox_text;
+
+  switch ($form_id) {
+    /*
+    // the user_profile_form
+    case 'user_profile_form':
+      if (module_exists(devel)) {
+        dsm($form);
+      };
+    case 'edit-user-profile-form' :
+         $form['terms'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Usage Policy'),
+            '#weight' => 10,
+            '#collabsible' => FALSE,
+            '#collapsed' => FALSE,
+         );
+
+         $form['terms']['terms_text'] = array(
+            '#weight' => 0,
+            '#value' =>
+               '<div style="height: 150px; overflow-y: scroll;">'
+               .$usage_terms_text
+               .'</div>',
+          );
+         $form['terms']['terms_checkbox'] = array(
+            '#type' => 'checkbox',
+            '#title' => $usage_terms_checkbox_text,
+          );
+    break;
+    */
+    case 'user_login':
+    case 'user_login_block':
+      // Just check if the user is already logged in
+      global $user;
+      // 1. Use loginTest to see if they are already logged into Convio, but only if this isn't an error redirect so that we avoid infinite loops
+      if (!isset($_GET['cons_id']) && !$user->uid && !(isset($_GET['code']) || isset($_GET['message']))) {
+        convio_api_loginTest('convio/session/return', 'user/login');
+      }
+      else {
+        // Are we coming back from a failed login attempt? If so, display a message showing them what happened.
+        if (isset($_GET['code']) && isset($_GET['message'])) {
+          drupal_set_message(t('Login was unsuccessful. Please ensure your username and password are correct. Please request your password via the main site if you have forgotten it. If you know that your credentials are correct, please get in touch with us.'), 'error');
+        }
+        // They are not logged in, and we need to process the login on the Drupal side.
+        // TODO: Fix convio module-specific stuff to the convio_api format below.
+
+        // Remove standard login form fields and links.
+        unset($form["links"]);
+        unset($form["name"]);
+        unset($form["pass"]);
+        unset($form["submit"]);
+
+        $uri = convio_api_server_c();
+        $apikey = convio_api_key_public();
+      
+        // Form properties and listeners.
+        $form["#action"] = $uri;
+        $form["#id"] = "user-login-form";
+        $form["#method"] = "POST";
+        $form["#validate"] = array();
+        $form["#submit"] = array();
+
+        // Hidden fields.
+        $form["v"] = array("#type" => "hidden", "#value" => '1.0');
+        $form["api_key"] = array("#type" => "hidden", "#value" => $apikey);
+        $form["method"] = array("#type" => "hidden", "#value" => "login");
+        $form["sign_redirects"] = array("#type" => "hidden", "#value" => "true");
+
+        $destination_qs = '';
+        $destination_qs1 = ($_REQUEST['destination'] || $_REQUEST['edit']['destination'] ? explode("?", drupal_get_destination()) : '');
+        if ($destination_qs1) {
+          $destination_qs = $destination_qs1[0] . '&'; // We need to strip query string parameters from the destination
+        }
+
+        // Success callback is the current page with the encrypted authentication credentials.
+        $form["success_redirect"] = array("#type" => "hidden",
+                                          "#value" => url("convio/session/return", // was originally validate
+                                                          array("absolute" => TRUE,
+                                                                "query" => $destination_qs . "cons_id=\${loginResponse/cons_id}&token=\${loginResponse/token}"))
+                                          );
+
+        // Error callback is the user login page w/ errors.
+        $form["error_redirect"] = array(
+                                        "#type" => "hidden",
+                                        "#value" => url("user/login",
+                                                        array("absolute" => TRUE,
+                                                              "query" => $destination_qs . "code=\${errorResponse/code}&message=\${errorResponse/message}"))
+                                        );
+
+        $form['user_name'] = array('#type' => 'textfield',
+                                   '#title' => t('Username'),
+                                   '#maxlength' => 60,
+                                   '#size' => ($form_id == 'user_login_block') ? 15 : 30,
+                                   '#required' => TRUE,
+                                   );
+
+        $form['password'] = array('#type' => 'password',
+                                  '#title' => t('Password'),
+                                  '#maxlength' => 60,
+                                  '#size' => ($form_id == 'user_login_block') ? 15 : 30,
+                                  '#required' => TRUE,
+                                  );
+
+        $form['submit'] = array('#type' => 'submit',
+                                '#value' => t('Log in'),
+                                );
+      }
+      break;
+  };
+}
+
+/**
+ * Reference theme override for user registration
+ */
+
+/* function convio_api_theme($existing, $type, $theme, $path) {
+  return array(
+    // tell drupal what tempate to use for the user register form
+    'user_register' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'user-register', // name of the template
+        ),
+  );
+}
+*/
+// Kaland removed - can't see any use for this. If we do anything to registration, it will involve a redirect to the Convio registration page, so we don't need a tpl.php override. An API module shouldn't do that anyway; we can alter the form directly.
+
+/**
+* Form Validation routine
+*/
+
+/* function convio_api_admin_validate($form, &$form_state) {
+
+
+
+  if ($form_state['values']['convio_api_server'] == '') {
+    form_set_error('', t('You must enter the URL of the Convio Affiliate site.'));
+    drupal_set_message('Convio API Admin Form Validated.');
+  }
+
+}
+*/
+
+/**
+* END HOOKS
+*/
+
+/**
+* FUNCTIONS
+*/
+
+/**
+* This function connects the current user to the Convio server user page.
+*/
+function convio_api_userUpdate_submit() {
+
+
+
+
+}
+
+
+
+/**
+ * _convio_api_update_local_account
+ * @param $user_obj
+ * @param $save_to_session
+ * @return unknown_type
+ */
+  function convio_api_update_local_account($email = '', $cons_id = '') {
+      // convio_api_include();
+      global $user;
+      $uid = $user->uid;
+      // $server = "https://secure2.convio.net/apo";
+     // $apikey = "apoapikey";
+     // $account = "apiadmin";
+     // $pw = "APOedge10";
+      //        convio_api_getUser_call( $consid='' , $email='' , $format='' , $server='' , $apikey='' , $account='' , $pw='' )
+      $result = array();
+      $result = convio_api_getUser($cons_id, $email, "xml");
+
+      if ($result[0] == FALSE) {
+        // network errors
+        drupal_set_message( $result[1] , 'error');
+        return(FALSE);
+      }
+      else {
+        try {
+          // $result2 = convio_api_getUserTransactions('', $cons_id, '', '', '', '', '', '', 'ECOMMERCE_PURCHASE');
+          $xml = convio_api_parse_xml($result);
+          // $txml = convio_api_parse_xml($result2);
+          $fields = array();
+          $fields_update = convio_api_fields($fields, $xml);
+          // $trans_update = convio_api_transactions($txml); // Return the purchased product IDs, space-delimited
+          // $fields_update += $trans_update;
+          $user = user_save($user, $fields_update, 'Convio');
+        }
+        catch (Exception $e) {
+          _convio_api_xml_error($result, $type);
+        };
+      };
+      return(TRUE);
+  };
+
+
+    /**
+   * Adds standard includes to every page.
+   *
+   * 1) Open API JS lib and init script -> <head>
+   * 2) Session tracking beacon -> header region
+   * 3) Keep-alive beacon -> footer region
+   */
+  function _convio_api_add_includes() {
+    static $included = FALSE;
+    if (!$included) {
+
+        $api_config = ConvioConfiguration::getInstance();
+
+          // Establish a new C360 session if one doesn't exist already.
+         if (ConvioLoginHandler::getInstance()->newUserSession()) {
+             return;
+        }
+
+        $api_uri = $api_config->getURI();
+        $api_key = $api_config->getPublicKey();
+
+          // TODO: allow the regions to be overriden in the module configuration.
+         $region_header = "header";
+         $region_footer = "footer";
+
+          // Add Convio Open API JS library and init script.
+          drupal_set_html_head('<script type="text/javascript" src="' . $api_uri . '/../api/ConvioApi.js"></script>');
+
+         $script = '<script type="text/javascript">';
+         $script .= '  var CONVIO = {};';
+         $script .= '  CONVIO.OPEN = new ConvioApiClient("' . $api_key . '","/api_client.html","json");';
+         $script .= '</script>';
+         drupal_set_html_head($script);
+
+         // Add the session tracking beacon to the body of every page.
+         $trackerUrl = url('convio_api/includes/convio_api_status', array('query' => drupal_get_destination()));
+         $tracker = '<script type="text/javascript" src="' . $trackerUrl . '"></script>';
+         drupal_set_content($region_header, $tracker);
+
+        // Add a keepalive beacon to the bottom of every page.
+        $img = '<img src="' . $api_uri . '/PixelServer" />';
+        drupal_set_content($region_footer, $img);
+        }
+
+      // Include Convio module JS libraries on every page.
+      //  _convio_api_add_includes();
+      $included = TRUE;
+
+  }
+
+
+/*
+ * Utility function for listing type of error.
+ * Source: http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+ */
+
+function convio_api_http_status_code_string($code, $include_code=FALSE) {
+
+    switch ($code ) {
+        // 1xx Informational
+        case 100: $string = 'Continue'; break;
+        case 101: $string = 'Switching Protocols'; break;
+        case 102: $string = 'Processing'; break; // WebDAV
+        case 122: $string = 'Request-URI too long'; break; // Microsoft
+
+        // 2xx Success
+        case 200: $string = 'OK'; break;
+        case 201: $string = 'Created'; break;
+        case 202: $string = 'Accepted'; break;
+        case 203: $string = 'Non-Authoritative Information'; break; // HTTP/1.1
+        case 204: $string = 'No Content'; break;
+        case 205: $string = 'Reset Content'; break;
+        case 206: $string = 'Partial Content'; break;
+        case 207: $string = 'Multi-Status'; break; // WebDAV
+
+        // 3xx Redirection
+        case 300: $string = 'Multiple Choices'; break;
+        case 301: $string = 'Moved Permanently'; break;
+        case 302: $string = 'Found'; break;
+        case 303: $string = 'See Other'; break; //HTTP/1.1
+        case 304: $string = 'Not Modified'; break;
+        case 305: $string = 'Use Proxy'; break; // HTTP/1.1
+        case 306: $string = 'Switch Proxy'; break; // Depreciated
+        case 307: $string = 'Temporary Redirect'; break; // HTTP/1.1
+
+        // 4xx Client Error
+        case 400: $string = 'Bad Request'; break;
+        case 401: $string = 'Unauthorized'; break;
+        case 402: $string = 'Payment Required'; break;
+        case 403: $string = 'Forbidden'; break;
+        case 404: $string = 'Not Found'; break;
+        case 405: $string = 'Method Not Allowed'; break;
+        case 406: $string = 'Not Acceptable'; break;
+        case 407: $string = 'Proxy Authentication Required'; break;
+        case 408: $string = 'Request Timeout'; break;
+        case 409: $string = 'Conflict'; break;
+        case 410: $string = 'Gone'; break;
+        case 411: $string = 'Length Required'; break;
+        case 412: $string = 'Precondition Failed'; break;
+        case 413: $string = 'Request Entity Too Large'; break;
+        case 414: $string = 'Request-URI Too Long'; break;
+        case 415: $string = 'Unsupported Media Type'; break;
+        case 416: $string = 'Requested Range Not Satisfiable'; break;
+        case 417: $string = 'Expectation Failed'; break;
+        case 422: $string = 'Unprocessable Entity'; break; // WebDAV
+        case 423: $string = 'Locked'; break; // WebDAV
+        case 424: $string = 'Failed Dependency'; break; // WebDAV
+        case 425: $string = 'Unordered Collection'; break; // WebDAV
+        case 426: $string = 'Upgrade Required'; break;
+        case 449: $string = 'Retry With'; break; // Microsoft
+        case 450: $string = 'Blocked'; break; // Microsoft
+
+        // 5xx Server Error
+        case 500: $string = 'Internal Server Error'; break;
+        case 501: $string = 'Not Implemented'; break;
+        case 502: $string = 'Bad Gateway'; break;
+        case 503: $string = 'Service Unavailable'; break;
+        case 504: $string = 'Gateway Timeout'; break;
+        case 505: $string = 'HTTP Version Not Supported'; break;
+        case 506: $string = 'Variant Also Negotiates'; break;
+        case 507: $string = 'Insufficient Storage'; break; // WebDAV
+        case 509: $string = 'Bandwidth Limit Exceeded'; break; // Apache
+        case 510: $string = 'Not Extended'; break;
+
+        // Unknown code:
+        default: $string = 'Unknown';  break;
+    }
+    if ($include_code )
+        return $code . ' '. $string;
+    return $string;
+}
+
+function convio_api_user_load_by_profile($cons_id) {
+  $convio_pid = variable_get('convio_api_profile_field_id', FALSE);
+  if ($convio_pid === FALSE) return FALSE;
+  $match = db_result(db_query("select uid from {profile_values} where fid = %d and value = %d", $convio_pid, $cons_id));
+  if ($match) return user_load($match);
+  else return FALSE;
+}
+
+function convio_api_cons_id_profile_field() {
+  static $field_name;
+  if (!isset($field_name)) {
+    $convio_pid = variable_get('convio_api_profile_field_id', FALSE);
+    $field_name = db_result(db_query("select name from {profile_fields} where fid = %d", $convio_pid));
+  }
+  if ($field_name) return $field_name;
+  else return FALSE;
+}
+
+function convio_api_process_return() {
+  // Do we have a cons_id?
+  $redirect_fail = FALSE;
+  $cons_id = $_GET['cons_id'];
+  if ($cons_id) {
+    // Cool, they're already logged in. Just make sure the timestamp is within a few seconds of this request, and if so, we'll trust Convio and log in the user.
+    $time_difference = gmmktime() - $_GET['ts'];
+    if ($time_difference < 30) {
+      // Find the user
+      /* // Maybe future use: Try authmap table first
+      $cons_user = user_external_load($cons_id); */
+      // if (!$cons_user) { // Maybe future use
+      // Fall back on Convio ID in profile if no hit yet
+      $cons_user = convio_api_user_load_by_profile($cons_id);
+      // }
+      if (!$cons_user) {
+        // If still no match, we need to register them. We first need to retrieve their Convio user details with a Server API call.
+        $cons_user_result = convio_api_getUser($cons_id, '', 'xml');
+
+        if ($cons_user_result[0] == FALSE) {
+          // network errors
+          drupal_set_message($cons_user_result[1] , 'error');
+          return(FALSE);
+        }
+        else {
+          try {
+            $cons_user_xml = convio_api_parse_xml($cons_user_result);
+          }
+          catch (Exception $e) {
+            _convio_api_xml_error($cons_user_result, $type);
+          }
+        }
+
+        global $user; // This will be set by the next function
+        $convio_username = $cons_user_xml->user_name;
+        user_external_login_register($convio_username, 'convio_api');
+
+        if ($user) {
+          // Update basic information needed by Drupal
+          $edit['mail'] = $cons_user_xml->email->primary_address;
+          $user = user_save($user, $edit);
+          $cons_user = $user;
+          // Manually call the initial convio_api_update_local_account() to avoid insert and update hook looping and stuff
+          try {
+            convio_api_update_local_account('', $cons_id);
+          }
+          catch (Exception $e) {
+            // Just fail silently for now.
+            return;
+          }
+        }
+        else {
+        // If registration fails, set $redirect_fail to TRUE and bail
+          $redirect_fail = TRUE;
+        }
+      }
+      if ($cons_user) {
+        if (!isset($user)) global $user;
+        if (!$user->uid) user_external_login($cons_user); // Their profile should be updated here if auto-sync is enabled - if they are already logged in, then we trapped them at 'insert' as well, so no action needed here.
+        drupal_goto(); // I stand corrected - all the login hooks have already run at this point, and now we must redirect to wherever the destination takes us. (KK)
+      }
+      else { // Just in case.
+        $redirect_fail = TRUE;
+      }
+    }
+    else {
+      // Can't log them in, but we don't want to just drop them.
+      $redirect_fail = TRUE;
+    }
+  }
+  else {
+    $redirect_fail = TRUE;
+  }
+  if ($redirect_fail) {
+    drupal_set_message(t('We experienced technical difficulties in loading your information. Please <a href="@retry">click here to try accessing the Web page again</a>.', array('@retry' => url('user/login'))), 'error');
+    drupal_goto('user/login', array('cons_id' => '0'));
+  }
+}
+
+function convio_api_user_logout() {
+  convio_api_logout('drupal_logout', 'user');
+}
+
+function convio_api_drupal_logout() {
+  module_load_include('inc', 'user', 'user.pages');
+  user_logout();
+}
+
+/**
+ * Get the Client API URI
+ */
+function convio_api_server_c($server = '') {
+  static $uri;
+  if (!isset($uri)) $uri = variable_get('convio_api_server', $server) .'/site/CRConsAPI';
+  return $uri;
+}
+
+/**
+ * Get the API public key
+ */
+function convio_api_key_public($apikey = '') {
+  static $key;
+  if (!isset($key)) $key = variable_get('convio_api_key', $apikey);
+  return $key;
+}
+
+function convio_api_parse_xml($result) {
+  $me = $result[0];
+  libxml_use_internal_errors(true);
+  try {
+    libxml_get_errors();
+    $xml = new SimpleXMLElement($result[0]);
+
+    // check for Convio API errors
+    $entity = (string)$xml->getName();
+    if ("errorResponse" == $entity) {
+      $code = (string)$xml->code;
+      $message = (string)$xml->message;
+      $advisory = t('Unable to update record for ');
+      if ($uid != 1) {
+        //warn if not drupal admin
+        //drupal_set_message( '<b>Convio API Error</b>: ' .$code .' - ' .$message, 'warn');
+        //drupal_set_message( $advisory .$email , 'warn');
+        return(FALSE);
+      }
+    }
+    else {
+      return $xml;
+    }
+  }
+  catch (Exception $e) {
+    _convio_api_xml_error($result);
+  }
+}
+
+function _convio_api_xml_error($result, $type = 'error') {
+  // XML parsing errors
+  drupal_set_message("<p>XML Parsing Error: </p>", $type);
+  drupal_set_message($result, $type);
+  return(FALSE);
+}
+

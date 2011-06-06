@@ -1,0 +1,56 @@
+Convio Single Sign-On for Drupal
+This document outlines steps required to configure your Convio and Drupal sites 
+to install and use the Convio Single Sign-On for Drupal module.
+
+
+Glossary
+
+<web.home>: Apache web site root directory (e.g. \drupal-6\apache2\htdocs\)
+<drupal.home>: Drupal application root directory (e.g. \drupal-6\drupal\htdocs)
+<COM.public.host>: Convio Online Marketing public host name (e.g. crm.pihlap.com)
+
+
+Installation Instructions
+
+Part I. Install module on your Drupal site.
+1) Download and unzip the latest version of the Convio SSO project from 
+  http://drupal.org/node/859928.
+2) Copy the contents of the directory to 
+  <drupal.home>/sites/all/modules/convio). Make sure to preserve the directory 
+  structure from the archive or else you will encounter errors when configuring 
+  the module in Step 12.
+
+Part II. Configure Convio APIs on your Convio site.
+3) Log into Convio as an administrator.
+4) Go to Setup -> Site Options and click on the Open API Configuration tab.
+5) Under the Configure API Keys section configure your Convio API Key, 
+  temporarily note your Convio API Secret Key for step 7 (or regenerate and 
+  temporarily note), and save.
+6) Under the Configure API to allow server access section configure your IP 
+   White List and your API Administrative Accounts.  The IP White List will need 
+   to be configured so that your Drupal server to authenticate and access Convio 
+   Open APIs.
+7) Create a new text file whose contents are your Convio Open API Secret key. 
+   For security reasons, do not place this file under your <web.root> or 
+   <drupal.home>. (e.g. \drupal\conf\skey.txt)
+8) Navigate to the following URL http://<COM.public.host>/api/api_client.html. 
+   Copy this file to <web.home>/api_client.html.  When you load this URL, it will 
+   appear blank in your browser window - that is fine.  Go ahead and click 
+   File > Save As in your browser and save as api_client.html.
+
+Part III. Enable the Convio module on your Drupal site.
+9) Log into Drupal as an administrator.
+10) Navigate to Administer > Modules.
+11) Enable Convio SSO and click save.
+12) Navigate to Administration by Module (drupal/admin/by-module).  Under 
+   Convio SSO, click on Convio Integration.  Fill out the form with your 
+   Open API configuration. 
+    a. The API Service URI is your COM website base URL.
+        e.g., http://crm.pihlap.com/site
+    b. The API Secret Key File should be the path of the file you created in 
+       step 7.
+       For security reasons, this file should not be placed under your 
+       <web.root> or <drupal.home>.
+    c. All other fields should map to those configured in steps 5 and 6.
+
+## END ##

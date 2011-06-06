@@ -1,0 +1,55 @@
+ function _convio_api_update_local_account($user_obj, $save_to_session) {
+  $item = 'convio_api_update_local_account() called';
+  firep($item);
+
+    // loginto Convio
+    $str01 = variable_get('convio_api_Server', 'defaultserver');
+    $str02 = '/site/SRConsAPI?method=getSingleSignOnToken';
+    $str03 = '&api_key=';
+    $str04 = variable_get('convio_api_key', 'defaultapikey');
+    $str05 = '&response_format=json';
+    $str06 = '&v=1.0';
+    $str07 = '&suppress_response_codes=FALSE';
+    $str08 = '&login_name=';
+    $str09 = variable_get('convio_api_login_name', 'defaultapilogin');
+    $str10 = '&login_password=';
+    $str11 = variable_get('convio_api_login_password', 'defaultapipw');
+    $str12 = '&cons_id=';
+    $str13 = variable_get('profile_Cons_Id', 'defaultsignin');
+
+    /* build string
+    * https://secure2.convio.net/organization/site/SRConsAPI?method=getSingleSignOnToken
+    * &api_key=value
+    * &response_format=json
+    * &v=1.0
+    * &suppress_response_codes=FALSE
+    * &login_name=value
+    * &login_password=value
+    * &cons_id=value
+    */
+    $getSingleSignOnToken = "$str01 $str02 $str03 $str04 $str05 $str06 $str07 $str08 $str09 $str10 $str11 $str12 $str13" ;
+    $requestType = "signInRegisterUser";
+
+    /* place the call to the Convio server */
+    try {
+        $result = $convio_api_client->processRequest($doc->saveXML());
+        if ($save_to_session ==1) {
+            $dom_doc = new DOMDocument();
+            $dom_doc->loadXML($result);
+            $params = $dom_doc->getElementsByTagName("Param");
+
+            $sessionParam = $params->item(1);
+            $transactionParam = $params->item(2);
+
+            $st = $sessionParam->getAttribute('paramValue');
+
+            $tid = $transactionParam->getAttribute('paramValue');
+            watchdog("Convio", "st:". $st);
+            $_SESSION['convio_st'] = $st;
+            $_SESSION['convio_tid'] = $tid;
+            json_decode($json, TRUE);
+        }
+    } catch (SSOFault $convioex) {
+        watchdog("Convio SSO Error: ", $convioex->getMessage());
+    }
+}

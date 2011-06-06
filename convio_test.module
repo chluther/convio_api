@@ -1,0 +1,106 @@
+<?php
+function _picasa_login() {
+  // Login vars
+  $vars = array(
+    'Email' => variable_get('picasa_user_id', ''),
+    'Passwd' => variable_get('picasa_password', ''),
+    'accountType' => 'GOOGLE',
+    'source' => 'Drupal-Google-Picasa-Integration',
+    'service' => 'lh2',
+  );
+  _picasa_parse_vars($vars);
+  // Make request
+  $url = 'https://www.google.com/accounts/ClientLogin?';
+  $ch = curl_init($url);
+  curl_setopt($ch, CURLOPT_POST, true);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+/*
+  curl_setopt($ch, CURLOPT_COOKIEJAR, PICASA_COOKIE_FILE);
+*/
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $vars);
+  // Debug
+  curl_setopt($ch, CURLOPT_VERBOSE, 1);
+  $fh = fopen(file_directory_path() .'/curl.log', 'w');
+  curl_setopt($ch, CURLOPT_STDERR, $fh);
+
+  $response = curl_exec($ch);
+  curl_close($ch);
+  unset($ch);
+  // Analize response
+  $response = explode(chr(10), $response);
+  if (count($response)) {
+    foreach ($response as $token) {
+      $token = explode('=', $token);
+      if ($token[0] == 'Auth') {
+        $response = (object)array('value' => $token[1], 'type' => 'Auth');
+      }
+      elseif ($token[0] == 'Error')
+        $response = _picasa_default_error();
+    }
+  }
+
+  // Set Auth status
+  variable_set('picasa_auth_status', $response);
+}
+
+/**
+ * Do a curl_exec with provided $type and $vars.
+ */
+function picasa_exec($type = 'GET', $vars = array(), $parse = TRUE) {
+  // Check if path is valid and token works
+  $auth_status = picasa_auth_status();
+  if (isset($vars['path']) && $auth_status->type == 'Auth') {
+    // Get path and prevents being parsed
+    $path = $vars['path'];
+    unset($vars['path']);
+    // Fetch headers
+    $headers = array('Authorization: GoogleLogin auth='. $auth_status->value);
+    if (isset($vars['headers']) ? is_array($vars['headers']) : FALSE) {
+      $headers = array_merge($headers, $vars['headers']);
+      unset($vars['headers']);
+    }
+    // Determine wheter to submit vars and parse them
+    if (in_array($type, array('GET'))) {
+      _picasa_parse_vars($vars);
+      $get_query = $type == 'GET' ? $vars : '';
+    }
+    // Make request
+    $url = PICASA_BASE_URL . $path .
+           ($get_query ? '?'. $get_query : '');
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    // Debug
+    curl_setopt($ch, CURLOPT_VERBOSE, 1);
+    $fh = fopen(file_directory_path() .'/curl.log', 'w');
+    curl_setopt($ch, CURLOPT_STDERR, $fh);
+
+    // POST options
+    if ($type == 'POST') {
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $vars['data']);
+    }
+    // DELETE options
+    if ($type == 'DELETE') {
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $type);
+    }
+
+    // PUT options
+    if ($type == 'PUT') {
+      curl_setopt($ch, CURLOPT_PUT, TRUE);
+      curl_setopt($ch, CURLOPT_INFILESIZE, $vars['filesize']);
+      curl_setopt($ch, CURLOPT_INFILE, $vars['file']);
+    }
+    // Let's execute the request
+    $result = curl_exec($ch);
+    curl_close($ch);
+    if ($parse) {
+      // Parse and retrieve answer
+      return @simplexml_load_string($result);
+    }
+    else
+      return $result;
+  }
+  return FALSE;
+}

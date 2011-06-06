@@ -1,0 +1,101 @@
+function _convio_api_sign_in($user_obj, $save_to_session){
+
+	$userid=$user_obj->uid;
+	$convioShortName = variable_get('convio_api_shortname', '');
+	$convioApiKey = variable_get('convio_api_key', '');
+	$convioLoginName = variable_get('convio_api_login_name', '');
+	$convioLoginPassword = variable_get('convio_api_login_password', '');
+	$requestType = "signInRegisterUser";
+
+	/* NOTE below if you are using DNS masking, you MUST replace affiliate.convio.com with
+	your DNS masked URL e.g. community.yoursite.com */
+	$convio_api_client = new SOAPClient("http://affiliate.convio.com/Convio/soap/ConvioSoapSvc?WSDL");
+
+	$convio_api_client->trace = 4;
+	$auth->AffiliateUserName = $affiliateUserName;
+	$auth->AffiliateEmail = $affiliateEmail;
+	$doc = new DomDocument('1.0', 'UTF-8');
+	$header_input = array('ns2:AffiliateUserName' => $affiliateUserName, 'ns2:AffiliateUserEmail' =>$affiliateEmail);
+	$headerVar = new SoapVar($header_input, SOAP_ENC_OBJECT);
+	$headert = new SoapHeader('http://schemas.Convio.com/services/soap',	'AffiliateAuthenticationToken', $headerVar);
+	$convio_api_client->__setSoapHeaders(array($headert));
+	$nodeConviossoRequest = $doc->createElementNS("http://schemas.Convio.com/services/soap","ConviossoRequest");
+	$nodeConviossoRequest = $doc->appendChild($nodeConviossoRequest);
+	$requestName = $nodeConviossoRequest->setAttribute("requestName", $requestType);
+
+	/* dynamically replace this with the username of the member currently registering or logging in*/
+	$userName = $user_obj->name;
+
+	/* dynamically replace this with the email of the member currently registering */
+	$email = $user_obj->mail;
+
+	/* dynamically replace this with the first name of the member currently registering OPTIONAL */
+	$firstName = $user_obj->name;
+
+	/* dynamically replace this with the last name of the member currently registering OPTIONAL */
+	$lastName = '';
+
+	/* build the request XML document */
+	$nodeaffiliateUserName = $doc->createElement("Param");
+	$newnodeaffiliateUserName = $nodeConviossoRequest->appendChild($nodeaffiliateUserName);
+	$paraNameAttr = $nodeaffiliateUserName->setAttribute("paramName", "affiliateUserName");
+	$paramValue = $nodeaffiliateUserName->setAttribute("paramValue", $affiliateUserName);
+	$nodeaffiliateEmail = $doc->createElement("Param");
+	$newnodeaffiliateEmail = $nodeConviossoRequest->appendChild($nodeaffiliateEmail);
+	$paraNameAttr = $nodeaffiliateEmail->setAttribute("paramName", "affiliateEmail");
+	$paramValue = $nodeaffiliateEmail->setAttribute("paramValue", $affiliateEmail);
+	$nodeaffiliateSiteName = $doc->createElement("Param");
+	$newnodeaffiliateSiteName = $nodeConviossoRequest->appendChild($nodeaffiliateSiteName);
+	$paraNameAttr = $nodeaffiliateSiteName->setAttribute("paramName", "affiliateSiteName");
+	$paramValue = $nodeaffiliateSiteName->setAttribute("paramValue", $affiliateSiteName);
+	$nodeuserName = $doc->createElement("Param");
+	$newnodeuserName = $nodeConviossoRequest->appendChild($nodeuserName);
+	$paraNameAttr = $nodeuserName->setAttribute("paramName", "userName");
+	$paramValue = $nodeuserName->setAttribute("paramValue", $userName);
+	$nodeemail = $doc->createElement("Param");
+	$newnodeemail = $nodeConviossoRequest->appendChild($nodeemail);
+	$paraNameAttr = $nodeemail->setAttribute("paramName", "email");
+	$paramValue = $nodeemail->setAttribute("paramValue", $email);
+	$nodeforce = $doc->createElement("Param");
+	$newnodeemail = $nodeConviossoRequest->appendChild($nodeforce);
+	$paraNameAttr = $nodeforce->setAttribute("paramName", "forceEmailUpdate");
+	$paramValue = $nodeforce->setAttribute("paramValue", "true");
+
+
+	$nodebirthday = $doc->createElement("Param");
+	$newnodebirthday = $nodeConviossoRequest->appendChild($nodebirthday);
+	$paraNameAttr = $nodebirthday->setAttribute("paramName", "birthday");
+	$paramValue = $nodebirthday->setAttribute("paramValue", "1970-01-01");
+
+	$nodefirstName = $doc->createElement("Param");
+	$newnodefirstName = $nodeConviossoRequest->appendChild($nodefirstName);
+	$paraNameAttr = $nodefirstName->setAttribute("paramName", "firstName");
+	$paramValue = $nodefirstName->setAttribute("paramValue", $firstName);
+	$nodelastName = $doc->createElement("Param");
+	$newnodelastName = $nodeConviossoRequest->appendChild($nodelastName);
+	$paraNameAttr = $newnodelastName->setAttribute("paramName", "lastName");
+	$paramValue = $newnodelastName->setAttribute("paramValue", $lastName);
+
+	$doc->appendChild($nodeConviossoRequest);
+	/* place the registerNewUser call to Convio */
+	try {
+		$result = $convio_api_client->processRequest($doc->saveXML());
+		if ($save_to_session ==1){
+			$dom_doc = new DOMDocument();
+			$dom_doc->loadXML($result);
+			$params = $dom_doc->getElementsByTagName("Param");
+
+			$sessionParam = $params->item(1);
+			$transactionParam = $params->item(2);
+
+			$st = $sessionParam->getAttribute('paramValue');
+
+			$tid = $transactionParam->getAttribute('paramValue');
+			watchdog("Convio","st:".$st);
+			$_SESSION['convio_st'] = $st;
+			$_SESSION['convio_tid'] = $tid;
+		}
+	} catch (SOAPFault $soapex) {
+		watchdog("Convio SSO Error: ",$soapex->getMessage());
+	}
+}

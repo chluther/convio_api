@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<getConsTransactionsResponse xsi:schemaLocation="http://convio.com/crm/v1.0 http://service.convio.net/xmlschema/crm.public.v1.xsd" xmlns="http://convio.com/crm/v1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <transaction>
+    <timestamp>2008-12-14T03:12:25.066-06:00</timestamp>
+    <confirmation_code>2023-1161-25-3362-3363</confirmation_code>
+    <amount>
+      <decimal>14.50</decimal>
+      <formatted>$14.50</formatted>
+    </amount>
+    <tender_type>CREDIT_CARD</tender_type>
+    <pay_method>ONLINE</pay_method>
+    <transaction_type>ECOMMERCE_PURCHASE</transaction_type>
+    <credit_card_type>VISA</credit_card_type>
+    <credit_card_number>************7618</credit_card_number>
+    <credit_card_expiration>2010-09-30-05:00</credit_card_expiration>
+    <billing_name>
+      <title>Dr.</title>
+      <first>ALMAYRAC</first>
+      <middle xsi:nil="true"/>
+      <last>Christian</last>
+      <suffix xsi:nil="true"/>
+      <prof_suffix xsi:nil="true"/>
+    </billing_name>
+    <billing_address>
+      <street1>55, Avenue Michel Jourdan</street1>
+      <street2 xsi:nil="true"/>
+      <street3 xsi:nil="true"/>
+      <city>CANNES LA BOCCA</city>
+      <state>None</state>
+      <zip>06150</zip>
+      <country>France</country>
+    </billing_address>
+  </transaction>
+</getConsTransactionsResponse>
+

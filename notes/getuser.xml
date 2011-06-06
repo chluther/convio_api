@@ -1,0 +1,334 @@
+<?xml version="1.0" standalone="yes"?>
+<root>
+  <field>
+    <name>accepts_postal_mail</name>
+    <label>Accept Mail</label>
+    <required>false</required>
+    <valueType>BOOLEAN</valueType>
+  </field>
+  <field>
+    <name>admin_status</name>
+    <label>Administrator Status</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>birth_date</name>
+    <label>Date of Birth</label>
+    <required>false</required>
+    <valueType>DATE</valueType>
+  </field>
+  <field>
+    <name>cat_id</name>
+    <label>Security Category</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+  </field>
+  <field>
+    <name>custom_boolean50</name>
+    <label>Mobile Opt-in</label>
+    <required>false</required>
+    <valueType>BOOLEAN</valueType>
+  </field>
+  <field>
+    <name>custom_string1</name>
+    <label>Pizza</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>custom_string2</name>
+    <label>Favorite Singer</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>dir_member</name>
+    <label>Directory Member</label>
+    <required>false</required>
+    <valueType>BOOLEAN</valueType>
+  </field>
+  <field>
+    <name>dir_member_opt_in</name>
+    <label>Directory Opt-In</label>
+    <required>false</required>
+    <valueType>BOOLEAN</valueType>
+  </field>
+  <field>
+    <name>districts.cong_dist_id_override</name>
+    <label>Congressional District (Manual Override)</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>districts.home_county_id_override</name>
+    <label>County (Manual Override)</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>100</maxChars>
+  </field>
+  <field>
+    <name>districts.state_house_dist_id_override</name>
+    <label>State House District (Manual Override)</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>districts.state_senate_dist_id_override</name>
+    <label>State Senate District (Manual Override)</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>email.accepts_email</name>
+    <label>Accept Email</label>
+    <required>false</required>
+    <valueType>BOOLEAN</valueType>
+  </field>
+  <field>
+    <name>email.preferred_format</name>
+    <label>Preferred Format</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>email.primary_address</name>
+    <label>Email</label>
+    <required>true</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>email.status</name>
+    <label>Email Status</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>email_opt_in_status</name>
+    <label>Email Opt-In Status</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>employment.employer</name>
+    <label>Employer</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>100</maxChars>
+  </field>
+  <field>
+    <name>employment.occupation</name>
+    <label>Occupation</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>64</maxChars>
+  </field>
+  <field>
+    <name>gender</name>
+    <label>Gender</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>20</maxChars>
+  </field>
+  <field>
+    <name>home_phone</name>
+    <label>Phone</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>member_id</name>
+    <label>Member ID</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>32</maxChars>
+  </field>
+  <field>
+    <name>membership.expiration_date</name>
+    <label>Expiration</label>
+    <required>false</required>
+    <valueType>DATE</valueType>
+  </field>
+  <field>
+    <name>membership.id</name>
+    <label>Membership ID</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>32</maxChars>
+  </field>
+  <field>
+    <name>membership.last_renewal_date</name>
+    <label>Last Renewal</label>
+    <required>false</required>
+    <valueType>DATE</valueType>
+  </field>
+  <field>
+    <name>membership.since_date</name>
+    <label>Member Since</label>
+    <required>false</required>
+    <valueType>DATE</valueType>
+  </field>
+  <field>
+    <name>membership.status</name>
+    <label>Status</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>membership_level_id</name>
+    <label>Membership Type</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+  </field>
+  <field>
+    <name>mobile_phone</name>
+    <label>Mobile Phone</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.first</name>
+    <label>First Name</label>
+    <required>true</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.last</name>
+    <label>Last Name</label>
+    <required>true</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.middle</name>
+    <label>Middle Name</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.prof_suffix</name>
+    <label>Professional Suffix</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.suffix</name>
+    <label>Suffix</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>name.title</name>
+    <label>Title</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>50</maxChars>
+  </field>
+  <field>
+    <name>origin_src_code</name>
+    <label>Origin Source Code</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>origin_subsrc_code</name>
+    <label>Origin Subsource Code</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>preferred_address</name>
+    <label>Preferred Address</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>preferred_phone</name>
+    <label>Preferred Phone</label>
+    <required>false</required>
+    <valueType>ENUMERATION</valueType>
+  </field>
+  <field>
+    <name>primary_address.city</name>
+    <label>City</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>64</maxChars>
+  </field>
+  <field>
+    <name>primary_address.country</name>
+    <label>Country</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>64</maxChars>
+  </field>
+  <field>
+    <name>primary_address.state</name>
+    <label>State/Province</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>30</maxChars>
+  </field>
+  <field>
+    <name>primary_address.street1</name>
+    <label>Street 1</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>128</maxChars>
+  </field>
+  <field>
+    <name>primary_address.street2</name>
+    <label>Street 2</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>128</maxChars>
+  </field>
+  <field>
+    <name>primary_address.zip</name>
+    <label>ZIP/Postal Code</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>40</maxChars>
+  </field>
+  <field>
+    <name>reminder_hint</name>
+    <label>Reminder Hint</label>
+    <required>false</required>
+    <valueType>TEXT</valueType>
+    <maxChars>128</maxChars>
+  </field>
+  <field>
+    <name>sustained_gift.card_expiration_date</name>
+    <label>Card Expiration Date</label>
+    <required>false</required>
+    <valueType>DATE</valueType>
+  </field>
+  <field>
+    <name>user_name</name>
+    <label>User Name</label>
+    <required>true</required>
+    <valueType>TEXT</valueType>
+    <maxChars>255</maxChars>
+  </field>
+  <field>
+    <name>user_password</name>
+    <label>Password</label>
+    <required>true</required>
+    <valueType>TEXT</valueType>
+    <maxChars>90</maxChars>
+  </field>
+</root>
